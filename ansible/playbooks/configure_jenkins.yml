@@ -1,0 +1,12 @@
+---
+- name: Configure Jenkins EC2 Instance
+  hosts: role_jenkins
+  become: true
+  remote_user: ubuntu
+  vars:
+    ansible_ssh_private_key_file: "~/.ssh/clouddevops-key.pem"
+
+  roles:
+    - java
+    - jenkins
+    - packages

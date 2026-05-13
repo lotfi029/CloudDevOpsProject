@@ -1,0 +1,106 @@
+---
+# Docker installation
+- name: Install required packages for Docker
+  apt:
+    name:
+      - apt-transport-https
+      - ca-certificates
+      - curl
+      - gnupg
+      - lsb-release
+    state: present
+
+- name: Add Docker GPG key
+  apt_key:
+    url: https://download.docker.com/linux/ubuntu/gpg
+    state: present
+
+- name: Add Docker repository
+  apt_repository:
+    repo: "deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
+    state: present
+    filename: docker
+
+- name: Install Docker
+  apt:
+    name:
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+    state: present
+    update_cache: yes
+
+- name: Start and enable Docker
+  systemd:
+    name: docker
+    state: started
+    enabled: yes
+
+- name: Add jenkins user to docker group
+  user:
+    name: jenkins
+    groups: docker
+    append: yes
+
+- name: Add ubuntu user to docker group
+  user:
+    name: ubuntu
+    groups: docker
+    append: yes
+
+# Trivy installation
+- name: Add Trivy GPG key
+  apt_key:
+    url: https://aquasecurity.github.io/trivy-repo/deb/public.key
+    state: present
+
+- name: Add Trivy repository
+  apt_repository:
+    repo: "deb https://aquasecurity.github.io/trivy-repo/deb {{ ansible_distribution_release }} main"
+    state: present
+    filename: trivy
+
+- name: Install Trivy
+  apt:
+    name: trivy
+    state: present
+    update_cache: yes
+
+- name: Verify Trivy installation
+  command: trivy --version
+  register: trivy_version
+  changed_when: false
+
+- name: Print Trivy version
+  debug:
+    msg: "{{ trivy_version.stdout }}"
+
+# AWS CLI v2 installation
+- name: Download AWS CLI v2
+  get_url:
+    url: https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip
+    dest: /tmp/awscliv2.zip
+
+- name: Unzip AWS CLI
+  unarchive:
+    src: /tmp/awscliv2.zip
+    dest: /tmp/
+    remote_src: yes
+
+- name: Install AWS CLI
+  command: /tmp/aws/install --update
+  args:
+    creates: /usr/local/bin/aws
+
+# kubectl installation
+- name: Get latest kubectl version
+  uri:
+    url: https://dl.k8s.io/release/stable.txt
+    return_content: yes
+  register: kubectl_version
+
+- name: Download kubectl
+  get_url:
+    url: "https://dl.k8s.io/release/{{ kubectl_version.content | trim }}/bin/linux/amd64/kubectl"
+    dest: /usr/local/bin/kubectl
+    mode: '0755'

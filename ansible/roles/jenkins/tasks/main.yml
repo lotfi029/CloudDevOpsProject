@@ -1,0 +1,82 @@
+---
+- name: Create keyrings directory
+  file:
+    path: /usr/share/keyrings
+    state: directory
+    mode: '0755'
+
+- name: Remove any old Jenkins GPG key files
+  file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - /usr/share/keyrings/jenkins-keyring.gpg
+    - /usr/share/keyrings/jenkins-keyring.asc
+    - /etc/apt/sources.list.d/jenkins.list
+
+- name: Download and dearmor Jenkins GPG key
+  shell: |
+    curl -fsSL https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key \
+      -o /tmp/jenkins.key
+    gpg --batch --yes --dearmor \
+      -o /usr/share/keyrings/jenkins-keyring.gpg /tmp/jenkins.key
+    gpg --batch --yes --keyserver keyserver.ubuntu.com \
+      --recv-keys 7198F4B714ABFC68 || true
+    gpg --batch --yes --export 7198F4B714ABFC68 | \
+      gpg --batch --yes --dearmor \
+      >> /usr/share/keyrings/jenkins-keyring.gpg || true
+    chmod 644 /usr/share/keyrings/jenkins-keyring.gpg
+
+- name: Add Jenkins repository
+  copy:
+    dest: /etc/apt/sources.list.d/jenkins.list
+    content: "deb [signed-by=/usr/share/keyrings/jenkins-keyring.gpg] https://pkg.jenkins.io/debian-stable binary/\n"
+    mode: '0644'
+
+- name: Update apt cache
+  apt:
+    update_cache: yes
+
+- name: Install Jenkins
+  apt:
+    name: jenkins
+    state: present
+
+- name: Create Jenkins systemd override directory
+  file:
+    path: /etc/systemd/system/jenkins.service.d
+    state: directory
+    mode: '0755'
+
+- name: Limit Jenkins Java heap for t2.small
+  copy:
+    dest: /etc/systemd/system/jenkins.service.d/override.conf
+    content: |
+      [Service]
+      Environment="JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64"
+    mode: '0644'
+
+- name: Reload systemd daemon
+  systemd:
+    daemon_reload: yes
+
+- name: Start and enable Jenkins service
+  systemd:
+    name: jenkins
+    state: started
+    enabled: yes
+
+- name: Wait for Jenkins to start
+  wait_for:
+    port: 8080
+    delay: 10
+    timeout: 120
+
+- name: Get Jenkins initial admin password
+  command: cat /var/lib/jenkins/secrets/initialAdminPassword
+  register: jenkins_password
+  changed_when: false
+
+- name: Print Jenkins initial admin password
+  debug:
+    msg: "Jenkins Initial Password: {{ jenkins_password.stdout }}"

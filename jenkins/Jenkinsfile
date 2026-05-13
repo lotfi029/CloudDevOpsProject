@@ -1,0 +1,76 @@
+@Library('clouddevops-shared-library') _
+
+pipeline {
+    agent any
+
+    environment {
+        IMAGE_NAME    = "clouddevops-app"
+        ECR_URL       = "108782058667.dkr.ecr.us-east-1.amazonaws.com"
+        AWS_REGION    = "us-east-1"
+        REPO_URL      = "https://github.com/lotfi029/CloudDevOpsProject.git"
+        GIT_BRANCH    = "main"
+        IMAGE_TAG     = "${BUILD_NUMBER}"
+    }
+
+    stages {
+        stage('Build Image') {
+            steps {
+                script {
+                    buildImage(env.IMAGE_NAME, env.IMAGE_TAG)
+                }
+            }
+        }
+
+        stage('Scan Image') {
+            steps {
+                script {
+                    scanImage(env.IMAGE_NAME, env.IMAGE_TAG)
+                }
+            }
+        }
+
+        stage('Push Image') {
+            steps {
+                script {
+                    pushImage(env.ECR_URL, env.IMAGE_NAME, env.IMAGE_TAG, env.AWS_REGION)
+                }
+            }
+        }
+
+        stage('Delete Image Locally') {
+            steps {
+                script {
+                    deleteLocalImage(env.IMAGE_NAME, env.IMAGE_TAG, env.ECR_URL)
+                }
+            }
+        }
+
+        stage('Update Manifests') {
+            steps {
+                script {
+                    updateManifests(env.IMAGE_NAME, env.IMAGE_TAG, env.ECR_URL)
+                }
+            }
+        }
+
+        stage('Push Manifests') {
+            steps {
+                script {
+                    pushManifests(env.REPO_URL, env.GIT_BRANCH, env.IMAGE_TAG)
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "Pipeline completed successfully. Image tag: ${env.IMAGE_TAG}"
+        }
+        failure {
+            echo "Pipeline failed. Check logs for details."
+        }
+        always {
+            cleanWs()
+        }
+    }
+}

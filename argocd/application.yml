@@ -1,0 +1,23 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: ivolve-app
+  namespace: argocd
+spec:
+  project: default
+
+  source:
+    repoURL: https://github.com/lotfi029/CloudDevOpsProject.git
+    targetRevision: main
+    path: kubernetes
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: ivolve
+
+  syncPolicy:
+    automated:
+      prune: true       # Remove resources deleted from Git
+      selfHeal: true    # Re-sync if cluster drifts from Git state
+    syncOptions:
+      - CreateNamespace=true
