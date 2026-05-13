@@ -1,0 +1,8 @@
+terraform/
+ansible/
+kubernetes/
+jenkins/
+argocd/
+docs/
+.git/
+*.md

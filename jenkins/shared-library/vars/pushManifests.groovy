@@ -5,6 +5,7 @@ def call(String repoUrl, String branch, String tag) {
         sh """
             git config user.email "jenkins@clouddevops.io"
             git config user.name "Jenkins CI"
+            git checkout -B ${branch}
             git add kubernetes/deployment.yml
             git commit -m "ci: update image tag to ${tag} [skip ci]"
             git push https://\${GIT_USER}:\${GIT_TOKEN}@${repoUrl.replace('https://', '')} ${branch}
