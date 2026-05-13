@@ -12,4 +12,4 @@ def call(String repoUrl, String branch, String tag) {
         """
     }
     echo "Manifests pushed to repository on branch ${branch}."
-}
+} 
