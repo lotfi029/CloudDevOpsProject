@@ -281,14 +281,14 @@ http://a003b45b6f46f4faebe59ef344206b1c-fc4fbd4976084767.elb.us-east-1.amazonaws
 
 | Topic | File |
 |-------|------|
-| GitHub Setup | [docs/README-01-github.md](docs/README-01-github.md) |
-| Docker | [docs/README-02-docker.md](docs/README-02-docker.md) |
-| Terraform | [terraform/README.md](docs/README-03-terraform.md) |
-| Ansible | [ansible/README.md](docs/README-04-ansible.md) |
-| Kubernetes | [kubernetes/README.md](docs/README-05-kubernetes.md) |
-| Jenkins | [jenkins/README.md](docs/README-06-jenkins.md) |
-| ArgoCD | [argocd/README.md](docs/README-07-argocd.md) |
-| Architecture & Setup | [docs/README-08-architecture.md](docs/README-08-architecture.md) |
+| GitHub Setup | [github.md](docs/README-01-github.md) |
+| Docker | [docker.md](docs/README-02-docker.md) |
+| Terraform | [terraform.md](terraform/README.md) |
+| Ansible | [ansible.md](ansible/README.md) |
+| Kubernetes | [ansible.md](kubernetes/README.md)|
+| Jenkins | [jenkins.md](jenkins/README.md) |
+| ArgoCD | [argocd.md](argocd/README.md) |
+| Architecture & Setup | [architecture.md](docs/README-08-architecture.md)|
 
 ---
 
