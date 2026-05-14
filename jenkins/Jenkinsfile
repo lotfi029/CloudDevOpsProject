@@ -4,60 +4,64 @@ pipeline {
     agent any
 
     environment {
-        IMAGE_NAME    = "clouddevops-app"
-        ECR_URL       = "108782058667.dkr.ecr.us-east-1.amazonaws.com"
-        AWS_REGION    = "us-east-1"
-        REPO_URL      = "https://github.com/lotfi029/CloudDevOpsProject.git"
-        GIT_BRANCH    = "main"
-        IMAGE_TAG     = "${BUILD_NUMBER}"
+        IMAGE_NAME = "clouddevops-app"
+        ECR_URL    = "108782058667.dkr.ecr.us-east-1.amazonaws.com"
+        AWS_REGION = "us-east-1"
+        REPO_URL   = "https://github.com/lotfi029/CloudDevOpsProject.git"
+        GIT_BRANCH = "main"
+        IMAGE_TAG  = "${BUILD_NUMBER}"
     }
 
     stages {
-        stage('Build Image') {
+        stage('Check Commit') {
             steps {
                 script {
-                    buildImage(env.IMAGE_NAME, env.IMAGE_TAG)
+                    def commitMsg = sh(
+                        script: "git log -1 --pretty=%B",
+                        returnStdout: true
+                    ).trim()
+                    
+                    if (commitMsg.contains('[skip ci]')) {
+                        currentBuild.result = 'NOT_BUILT'
+                        error("Skipping pipeline — commit by Jenkins CI")
+                    }
                 }
+            }
+        }
+
+        stage('Build Image') {
+            steps {
+                script { buildImage(env.IMAGE_NAME, env.IMAGE_TAG) }
             }
         }
 
         stage('Scan Image') {
             steps {
-                script {
-                    scanImage(env.IMAGE_NAME, env.IMAGE_TAG)
-                }
+                script { scanImage(env.IMAGE_NAME, env.IMAGE_TAG) }
             }
         }
 
         stage('Push Image') {
             steps {
-                script {
-                    pushImage(env.ECR_URL, env.IMAGE_NAME, env.IMAGE_TAG, env.AWS_REGION)
-                }
+                script { pushImage(env.ECR_URL, env.IMAGE_NAME, env.IMAGE_TAG, env.AWS_REGION) }
             }
         }
 
         stage('Delete Image Locally') {
             steps {
-                script {
-                    deleteLocalImage(env.IMAGE_NAME, env.IMAGE_TAG, env.ECR_URL)
-                }
+                script { deleteLocalImage(env.IMAGE_NAME, env.IMAGE_TAG, env.ECR_URL) }
             }
         }
 
         stage('Update Manifests') {
             steps {
-                script {
-                    updateManifests(env.IMAGE_NAME, env.IMAGE_TAG, env.ECR_URL)
-                }
+                script { updateManifests(env.IMAGE_NAME, env.IMAGE_TAG, env.ECR_URL) }
             }
         }
 
         stage('Push Manifests') {
             steps {
-                script {
-                    pushManifests(env.REPO_URL, env.GIT_BRANCH, env.IMAGE_TAG)
-                }
+                script { pushManifests(env.REPO_URL, env.GIT_BRANCH, env.IMAGE_TAG) }
             }
         }
     }
