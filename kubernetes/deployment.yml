@@ -28,7 +28,7 @@ spec:
               topologyKey: "kubernetes.io/hostname"
       containers:
         - name: ivolve-app
-          image: 108782058667.dkr.ecr.us-east-1.amazonaws.com/clouddevops-app:17
+          image: 108782058667.dkr.ecr.us-east-1.amazonaws.com/clouddevops-app:18
           ports:
             - containerPort: 5000
           resources:
