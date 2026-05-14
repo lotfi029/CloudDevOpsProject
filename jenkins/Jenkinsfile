@@ -16,50 +16,79 @@ pipeline {
         stage('Check Commit') {
             steps {
                 script {
+                    def commitAuthor = sh(
+                        script: "git log -1 --pretty=format:'%an'",
+                        returnStdout: true
+                    ).trim()
+
                     def commitMsg = sh(
                         script: "git log -1 --pretty=%B",
                         returnStdout: true
                     ).trim()
 
-                    if (commitMsg.contains('[skip ci]')) {
+                    echo "Commit author: ${commitAuthor}"
+                    echo "Commit message: ${commitMsg}"
+
+                    if (commitAuthor == "Jenkins CI" || commitMsg.contains('[skip ci]')) {
+                        echo "Skipping pipeline — triggered by Jenkins CI commit."
                         currentBuild.result = 'NOT_BUILT'
-                        error("Skipping — Jenkins CI commit, not a real change.")
+                        return
                     }
                 }
             }
         }
 
         stage('Build Image') {
+            when {
+                expression {
+                    return currentBuild.result != 'NOT_BUILT'
+                }
+            }
             steps {
                 script { buildImage(env.IMAGE_NAME, env.IMAGE_TAG) }
             }
         }
 
         stage('Scan Image') {
+            when {
+                expression { return currentBuild.result != 'NOT_BUILT' }
+            }
             steps {
                 script { scanImage(env.IMAGE_NAME, env.IMAGE_TAG) }
             }
         }
 
         stage('Push Image') {
+            when {
+                expression { return currentBuild.result != 'NOT_BUILT' }
+            }
             steps {
                 script { pushImage(env.ECR_URL, env.IMAGE_NAME, env.IMAGE_TAG, env.AWS_REGION) }
             }
         }
 
         stage('Delete Image Locally') {
+            when {
+                expression { return currentBuild.result != 'NOT_BUILT' }
+            }
             steps {
                 script { deleteLocalImage(env.IMAGE_NAME, env.IMAGE_TAG, env.ECR_URL) }
             }
         }
 
         stage('Update Manifests') {
+            when {
+                expression { return currentBuild.result != 'NOT_BUILT' }
+            }
             steps {
                 script { updateManifests(env.IMAGE_NAME, env.IMAGE_TAG, env.ECR_URL) }
             }
         }
 
         stage('Push Manifests') {
+            when {
+                expression { return currentBuild.result != 'NOT_BUILT' }
+            }
             steps {
                 script { pushManifests(env.REPO_URL, env.GIT_BRANCH, env.IMAGE_TAG) }
             }
@@ -67,14 +96,6 @@ pipeline {
     }
 
     post {
-        success {
-            echo "Pipeline completed. Image tag: ${env.IMAGE_TAG}"
-        }
-        failure {
-            echo "Pipeline failed."
-        }
-        always {
-            cleanWs()
-        }
+        always { cleanWs() }
     }
 }
