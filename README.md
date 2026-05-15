@@ -294,6 +294,6 @@ http://a003b45b6f46f4faebe59ef344206b1c-fc4fbd4976084767.elb.us-east-1.amazonaws
 
 <div align="center">
 
-© 2025 NTI DevOps Track × iVolve Technologies
+© 2026 NTI DevOps Track × iVolve Technologies
 
 </div>
